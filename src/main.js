@@ -15,18 +15,14 @@ import router from './router'
 import '@/icons' // icon
 import '@/permission' // permission control
 
-/**
- * If you don't want to use mock-server
- * you want to use MockJs for mock api
- * you can execute: mockXHR()
- *
- * Currently MockJs will be used in the production environment,
- * please remove it before going online ! ! !
- */
+
 if (process.env.NODE_ENV === 'production') {
   const { mockXHR } = require('../mock')
   mockXHR()
 }
+
+import HintButton from '@/components/HintButton'
+Vue.component(HintButton.name, HintButton)
 
 // set ElementUI lang to EN
 Vue.use(ElementUI, { locale })
@@ -34,6 +30,12 @@ Vue.use(ElementUI, { locale })
 // Vue.use(ElementUI)
 
 Vue.config.productionTip = false
+
+// 引入api请求接口
+import API from '@/api'
+Vue.prototype.$API = API
+import CategorySelect from '@/components/CategorySelect'
+Vue.component(CategorySelect.name, CategorySelect)
 
 new Vue({
   el: '#app',

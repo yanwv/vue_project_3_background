@@ -1,12 +1,18 @@
 import { login, logout, getInfo } from '@/api/user'
 import { getToken, setToken, removeToken } from '@/utils/auth'
-import { resetRouter } from '@/router'
+import { anyRoutes, resetRouter, asyncRoutes, constantRoutes } from '@/router'
+import router from '@/router'
 
 const getDefaultState = () => {
   return {
     token: getToken(),
     name: '',
-    avatar: ''
+    avatar: '',
+    routes: [],
+    roles: [],
+    buttons: [],
+    resultAsyncRoutes: [],
+    resultAllRoutes: []
   }
 }
 
@@ -19,11 +25,19 @@ const mutations = {
   SET_TOKEN: (state, token) => {
     state.token = token
   },
-  SET_NAME: (state, name) => {
-    state.name = name
+  // 存储用户信息
+  SET_USERINFO: (state, userInfo) => {
+    state.name = userInfo.name
+    state.avatar = userInfo.avatar
+    // 菜单权限
+    state.routes = userInfo.routes
+    // 按钮权限
+    state.buttons = userInfo.routes
   },
-  SET_AVATAR: (state, avatar) => {
-    state.avatar = avatar
+  SET_RESULTASYNCROUTES: (state, asyncRoutes) => {
+    state.resultAsyncRoutes = asyncRoutes
+    state.resultAllRoutes = constantRoutes.concat(state.resultAsyncRoutes, anyRoutes)
+    router.addRoutes(state.resultAllRoutes)
   }
 }
 
@@ -50,28 +64,23 @@ const actions = {
     //   })
     // })
   },
-
   // get user info
   getInfo({ commit, state }) {
     return new Promise((resolve, reject) => {
       getInfo(state.token).then(response => {
         const { data } = response
-
+        // vuex存储
+        commit('SET_USERINFO', data)
+        commit('SET_RESULTASYNCROUTES', computedAsyncRoutes(asyncRoutes, data.routes))
         if (!data) {
           return reject('Verification failed, please Login again.')
         }
-
-        const { name, avatar } = data
-
-        commit('SET_NAME', name)
-        commit('SET_AVATAR', avatar)
         resolve(data)
       }).catch(error => {
         reject(error)
       })
     })
   },
-
   // user logout
   logout({ commit, state }) {
     return new Promise((resolve, reject) => {
@@ -85,7 +94,6 @@ const actions = {
       })
     })
   },
-
   // remove token
   resetToken({ commit }) {
     return new Promise(resolve => {
@@ -94,6 +102,17 @@ const actions = {
       resolve()
     })
   }
+}
+
+const computedAsyncRoutes = (asyncRoutes, routes) => {
+  return asyncRoutes.filter(item => {
+    if (routes.indexOf(item.name) != -1) {
+      if (item.children && item.children.length) {
+        item.children = computedAsyncRoutes(item.children, routes)
+      }
+      return true
+    }
+  })
 }
 
 export default {
